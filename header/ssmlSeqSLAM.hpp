@@ -4,11 +4,13 @@
  *
  * This class provides methods to load datasets, preprocess images, and compute
  * SeqSLAM matches using different spherical representations. It supports three
- * types of spherical mappings: DIRECT_MAPPING, RESIZED_MAPPING, and VDSIL_MAPPING.
+ * types of spherical mappings: DIRECT_MAPPING, RESIZED_MAPPING, and
+ * VDSIL_MAPPING.
  *
  * The class uses LibPeR to perform the spherical image mapping.
- * The class uses OpenCV for image processing and Boost for filesystem operations.
- * It also integrates with the OpenSeqSLAM library for sequence matching.
+ * The class uses OpenCV for image processing and Boost for filesystem
+ * operations. It also integrates with the OpenSeqSLAM library for sequence
+ * matching.
  *
  * Key functionalities include:
  * - Loading datasets from CSV files.
@@ -50,22 +52,19 @@
 #define SSMLSEQSLAM_HPP
 
 // Types of available spherical representations
-typedef enum
-{
-  DIRECT_MAPPING,
-  RESIZED_MAPPING,
-  UNIPHORM_MAPPING
-} prMethodType;
+typedef enum { DIRECT_MAPPING, RESIZED_MAPPING, UNIPHORM_MAPPING } prMethodType;
 
 // Class for performing SeqSLAM on spherical images
-class SSMLSeqSLAM
-{
+class SSMLSeqSLAM {
 public:
   SSMLSeqSLAM() { isSphereInit = false; }
   void setSavePath(std::string path) { savePath = path; }
 
-  void loadDatasetCV(std::string path)
-  {
+  /* \fn void loadDatasetCV(std::string path)
+   * \brief Load a dataset from a txt file.
+   * \param path The path to the txt file.
+   */
+  void loadDatasetCV(std::string path) {
 
     std::string str_buf;
     std::string str_conma_buf;
@@ -74,14 +73,12 @@ public:
 
     std::ifstream ifs_csv_file(path);
 
-    while (getline(ifs_csv_file, str_buf))
-    {
+    while (getline(ifs_csv_file, str_buf)) {
       std::istringstream i_stream(str_buf);
 
       std::vector<std::string> temp_line;
 
-      while (getline(i_stream, str_conma_buf, ','))
-      {
+      while (getline(i_stream, str_conma_buf, ',')) {
         temp_line.push_back(str_conma_buf);
       }
       img_paths.push_back(temp_line);
@@ -89,8 +86,7 @@ public:
 
     cv::Mat imgCurrCV;
 
-    if (dataset_base_cv.size() > 0 || dataset_query_cv.size() > 0)
-    {
+    if (dataset_base_cv.size() > 0 || dataset_query_cv.size() > 0) {
       dataset_base_cv.clear();
       dataset_query_cv.clear();
     }
@@ -98,8 +94,7 @@ public:
     int newWidth = 1000;
     int newHeight = 500;
 
-    for (int i = 0; i < img_paths.size(); i++)
-    {
+    for (int i = 0; i < img_paths.size(); i++) {
 
       imgCurrCV = cv::imread(datasetPath + img_paths[i][0] + "/" +
                                  img_paths[i][2] + ".jpg",
@@ -119,8 +114,12 @@ public:
     }
   }
 
-  int computeOriginalSeqSLAM()
-  {
+  /* \fn int computeOriginalSeqSLAM()
+   * \brief Compute SeqSLAM matches using the original implementation (provided
+   * by Okita, based on Milford 2012).
+   * \return 0 if successful.
+   */
+  int computeOriginalSeqSLAM() {
     /* Find the matches */
     OpenSeqSLAM seq_slam;
     vector<cv::Mat> preprocessed_1 = seq_slam.preprocess(dataset_base_cv);
@@ -143,15 +142,13 @@ public:
     double mean_score = 0.;
     double n = 0.;
 
-    for (int x = 0; x < dataset_base_cv.size(); x++)
-    {
+    for (int x = 0; x < dataset_base_cv.size(); x++) {
       int index = static_cast<int>(index_ptr[x]);
 
       std::cout << score_ptr[x] << ", ";
 
       outResult << score_ptr[x] << "," << index << std::endl;
-      if (x > 5 && x < dataset_base_cv.size() - 5)
-      {
+      if (x > 5 && x < dataset_base_cv.size() - 5) {
         mean_score += score_ptr[x];
         n++;
       }
@@ -163,15 +160,20 @@ public:
     return 0;
   }
 
+  /* \fn std::vector<Eigen::VectorXd>
+   * extractSphericalIntensities(std::vector<cv::Mat> set) \brief Extract
+   * spherical intensities from a set of images projected on a spherical mesh.
+   * \param set The set of images to extract intensities from.
+   * \return A vector of Eigen vectors containing the spherical intensities of
+   * each image of the dataset.
+   */
   std::vector<Eigen::VectorXd>
-  extractSphericalIntensities(std::vector<cv::Mat> set)
-  {
+  extractSphericalIntensities(std::vector<cv::Mat> set) {
 
     unsigned long nbSamples = 0;
 
     std::vector<Eigen::VectorXd> intensities;
-    switch (this->methodType)
-    {
+    switch (this->methodType) {
     case DIRECT_MAPPING:
       nbSamples = delauMapper->nbSamples;
       break;
@@ -180,7 +182,7 @@ public:
       nbSamples = delauMapper->nbSamples;
       break;
 
-    case VDSIL_MAPPING:
+    case UNIPHORM_MAPPING:
       nbSamples = voroMapper->nbSamples;
       break;
     }
@@ -193,19 +195,16 @@ public:
 
     vpImage<unsigned char> I_req_temp, Mask_temp;
 
-    if (this->methodType == RESIZED_MAPPING && !isInit)
-    {
+    if (this->methodType == RESIZED_MAPPING && !isInit) {
       scaleFactor =
           sqrt((double)set[0].rows * (double)set[0].cols / (double)nbSamples);
       resizedWidth = round((double)set[0].cols / scaleFactor);
       resizedHeight = round((double)set[0].rows / scaleFactor);
 
-      if (resizedHeight % 2 != 0)
-      {
+      if (resizedHeight % 2 != 0) {
         resizedHeight++;
       }
-      if (resizedWidth % 2 != 0)
-      {
+      if (resizedWidth % 2 != 0) {
         resizedWidth++;
       }
 
@@ -225,13 +224,11 @@ public:
       isInit = true;
     }
 
-    for (unsigned long i = 0; i < set.size(); i++)
-    {
+    for (unsigned long i = 0; i < set.size(); i++) {
 
       vpImageConvert::convert(set[i], I_req_temp);
 
-      switch (this->methodType)
-      {
+      switch (this->methodType) {
       case DIRECT_MAPPING:
         delauMapper->buildFromEquiRect(I_req_temp, ecam, &Mask);
         break;
@@ -246,11 +243,9 @@ public:
         break;
       }
 
-      for (unsigned long s = 0; s < nbSamples; s++)
-      {
+      for (unsigned long s = 0; s < nbSamples; s++) {
 
-        switch (this->methodType)
-        {
+        switch (this->methodType) {
         case DIRECT_MAPPING:
           localIntensity(s) = (double)delauMapper->bitmap[s];
           break;
@@ -270,8 +265,13 @@ public:
     return intensities;
   }
 
-  int compute(int subdivLevel, prMethodType methodType)
-  {
+  /* \fn int compute(int subdivLevel, prMethodType methodType)
+   * \brief Compute SeqSLAM matches using different spherical mappings.
+   * \param subdivLevel The level of subdivision for the mapping.
+   * \param methodType The type of mapping to use.
+   * \return 0 if successful.
+   */
+  int compute(int subdivLevel, prMethodType methodType) {
 
     std::cout << dataset_base_cv.size() << ", " << dataset_query_cv.size()
               << std::endl;
@@ -309,8 +309,7 @@ public:
 
     std::string suffixPath;
 
-    switch (methodType)
-    {
+    switch (methodType) {
     case DIRECT_MAPPING:
       boost::filesystem::create_directories("../analysis/" + savePath +
                                             "/direct");
@@ -325,7 +324,7 @@ public:
           "resize/resize_mapping_" + std::to_string(subdivLevel) + "_sub";
       break;
 
-    case VDSIL_MAPPING:
+    case UNIPHORM_MAPPING:
       boost::filesystem::create_directories("../analysis/" + savePath +
                                             "/voronoi");
       suffixPath =
@@ -348,13 +347,11 @@ public:
     double mean_score = 0.;
     double n = 0;
 
-    for (int x = 0; x < dataset_base_cv.size(); x++)
-    {
+    for (int x = 0; x < dataset_base_cv.size(); x++) {
       int index = static_cast<int>(index_ptr[x]);
 
       outResult << score_ptr[x] << "," << index << std::endl;
-      if (x > 5 && x < dataset_base_cv.size() - 5)
-      {
+      if (x > 5 && x < dataset_base_cv.size() - 5) {
         mean_score += score_ptr[x];
         n++;
       }
@@ -366,13 +363,20 @@ public:
     return 0;
   }
 
+  /* \fn void setDataPath(std::string path)
+   * \brief Set the path to the dataset.
+   * \param path The path to the dataset.
+   */
   void setDataPath(std::string path) { datasetPath = path; }
 
 private:
-  void resizeStereoCam(prStereoModel &stereoCam, double scaleFactor)
-  {
-    for (int camNum = 0; camNum < 2; camNum++)
-    {
+  /* \fn void resizeStereoCam(prStereoModel &stereoCam, double scaleFactor)
+   * \brief Resize the stereo camera model.
+   * \param stereoCam The stereo camera model.
+   * \param scaleFactor The scale factor for resizing.
+   */
+  void resizeStereoCam(prStereoModel &stereoCam, double scaleFactor) {
+    for (int camNum = 0; camNum < 2; camNum++) {
       double u0 = ((prOmni *)(stereoCam.sen[camNum]))->getu0() / scaleFactor;
       double v0 = ((prOmni *)(stereoCam.sen[camNum]))->getv0() / scaleFactor;
       double au = ((prOmni *)(stereoCam.sen[camNum]))->getau() / scaleFactor;

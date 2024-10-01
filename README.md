@@ -46,7 +46,8 @@ This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
 WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 
 Description:
-Mapillary omnidirectional image sequences downloader
+Implementation of the SeqSLAM algorithm for omnidirectional images mapped on the sphere
+
 Authors:
 Antoine ANDRE, Guillaume CARON
 

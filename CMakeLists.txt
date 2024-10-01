@@ -61,7 +61,7 @@ FIND_PACKAGE(Boost REQUIRED)
 # find_package(Fitsio REQUIRED)
 set(header_files "./header/OpenSeqSLAM.h" "./header/ssmlSeqSLAM.hpp")
 set(src_files "./src/OpenSeqSLAM.cpp" "./main.cpp")
-add_executable(main ${header_files} ${my_cpps})
+add_executable(main ${header_files} ${src_files})
 include_directories("./header")
 
 include_directories(${Boost_INCLUDE_DIRS}) # /opt/local/include/ might be needed as well under MacOS
